@@ -1,0 +1,7 @@
+git+https://github.com/huggingface/diffusers
+accelerate>=0.16.0
+torchvision
+transformers>=4.25.1
+ftfy
+Jinja2
+bitsandbytes
