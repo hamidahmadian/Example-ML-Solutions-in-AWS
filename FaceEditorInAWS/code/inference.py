@@ -3,6 +3,7 @@ from io import BytesIO
 
 import numpy as np
 import torch
+from PIL import Image
 from diffusers import DDIMScheduler, AutoencoderKL
 from insightface.app import FaceAnalysis
 from insightface.utils import face_align
@@ -13,7 +14,7 @@ from pipelines.diffusion_pipelines import IpAdapterFacePlusPipeline
 def model_fn(model_dir):
     # Model Path, Load models and move to GPU
     base_model_path = f"{model_dir}/SG161222/Realistic_Vision_V4.0_noVAE"
-    vae_model_path = f"{model_dir}stabilityai/sd-vae-ft-mse"
+    vae_model_path = f"{model_dir}/stabilityai/sd-vae-ft-mse"
     image_encoder_path = f"{model_dir}/laion/CLIP-ViT-H-14-laion2B-s32B-b79K"
     ip_ckpt = f"{model_dir}/ip-adapter-faceid-plus_sd15.bin"
     device = "cuda"
@@ -54,18 +55,22 @@ def model_fn(model_dir):
 
 def predict_fn(data, pipe):
     # Get image and Load faceid embeds and face image
-    image = np.frombuffer(
-        base64.decodebytes(bytes(data.pop("image"), encoding="utf-8")),
-        dtype=np.uint8,
-    )
+
+    # Load PIL image
+    buffer_image = BytesIO(base64.b64decode(data.pop("image")))
+    pil_image = Image.open(buffer_image).convert('RGB')
+    open_cv_image = np.array(pil_image)
+    # Convert RGB to BGR
+    open_cv_image = open_cv_image[:, :, ::-1].copy()
 
     app = FaceAnalysis(name="buffalo_l", providers=['CUDAExecutionProvider', 'CPUExecutionProvider'])
     app.prepare(ctx_id=0, det_size=(640, 640))
 
-    faces = app.get(image)
+    faces = app.get(open_cv_image)
 
     faceid_embeds = torch.from_numpy(faces[0].normed_embedding).unsqueeze(0)
-    face_image = face_align.norm_crop(image, landmark=faces[0].kps, image_size=224)  # you can also segment the face
+    face_image = face_align.norm_crop(open_cv_image, landmark=faces[0].kps,
+                                      image_size=224)  # you can also segment the face
 
     # get prompt & parameters
     v2 = False
