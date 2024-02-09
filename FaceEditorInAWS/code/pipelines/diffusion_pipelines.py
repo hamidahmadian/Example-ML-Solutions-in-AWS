@@ -4,7 +4,7 @@ import torch
 from PIL import Image
 from diffusers import StableDiffusionPipeline
 
-from ..loaders.ip_adapter_face_plus import IpAdapterFacePlusMixin
+from loaders.ip_adapter_face_plus import IpAdapterFacePlusMixin
 
 
 class IpAdapterFacePlusPipeline(StableDiffusionPipeline, IpAdapterFacePlusMixin):

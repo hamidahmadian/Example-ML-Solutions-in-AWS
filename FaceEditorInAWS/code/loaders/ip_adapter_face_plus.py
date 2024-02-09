@@ -2,14 +2,13 @@ from typing import Dict, List, Union
 
 import torch
 from diffusers.utils.hub_utils import _get_model_file
+from helper.nn_modules import ProjPlusModel, LoRAAttnProcessor, LoRAIPAttnProcessor
 from safetensors import safe_open
 from transformers import CLIPImageProcessor, CLIPVisionModelWithProjection
 
-from ..helper.nn_modules import ProjPlusModel, LoRAAttnProcessor, LoRAIPAttnProcessor
-
 
 class IpAdapterFacePlusMixin:
-    _image_encoder_path = "laion/CLIP-ViT-H-14-laion2B-s32B-b79K"
+
     num_tokens = 4
     lora_rank = 128
 
@@ -54,6 +53,7 @@ class IpAdapterFacePlusMixin:
             self,
             pretrained_model_name_or_path_or_dict: Union[str, List[str], Dict[str, torch.Tensor]],
             weight_name: Union[str, List[str]],
+            image_encoder_path: str,
             subfolder: Union[str, List[str]] = None,
             **kwargs,
     ):
@@ -103,7 +103,7 @@ class IpAdapterFacePlusMixin:
             raise ValueError("Required keys are (`image_proj` and `ip_adapter`) missing from the state dict.")
 
         # if hasattr(self, "image_encoder") and getattr(self, "image_encoder", None) is None:
-        self.image_encoder = CLIPVisionModelWithProjection.from_pretrained(self._image_encoder_path).to(
+        self.image_encoder = CLIPVisionModelWithProjection.from_pretrained(image_encoder_path).to(
             self.device, dtype=self.dtype
         )
 
